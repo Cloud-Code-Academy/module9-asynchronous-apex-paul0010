@@ -22,36 +22,60 @@ public with sharing class NextStepBatch implements Database.Batchable<sObject>{
 
     public Database.QueryLocator start(Database.BatchableContext BC){
         // Query for all accounts and return the query locator.
-        return null; // Update null with the query locator
+        System.debug('Batch method Started!');
+        return Database.getQueryLocator([
+            SELECT Id, Next_Step__c 
+            FROM Account
+            ]); // Update null with the query locator
     }
     
     public void execute(Database.BatchableContext BC, List<Account> scope){
         final String BATCH_NEXT_STEP = 'Batching the next meetings together.';
-
+        System.debug('Batch method Executed!');
+        System.debug('Accounts in Batch: '+ scope.size());
         // Update the Next Step field on each record in the batch scope.
-
+        List<Account> updateAccs = new List<Account>();
         // Loop through the scope account records
-
+        for (Account acc : scope) {
             // Set the Next Step field to 'Batching the next meetings together.'
-
+            acc.Next_Step__c = BATCH_NEXT_STEP;
+            updateAccs.add(acc);
+        }
         // Update the account records in this batch scope
-        
+        update updateAccs;
         // Query for all opportunities related to the accounts in this batch scope
-
+        List<Opportunity> relatedOpps = [
+            SELECT Id, NextStep, AccountId 
+            FROM Opportunity 
+            WHERE AccountId IN :scope
+            ];
+        System.debug('Opportunities in Batch: '+ relatedOpps.size());
         // Loop through the opportunity records
-
+        List<Opportunity> updateOpps = new List<Opportunity>();
+        for (Opportunity opp : relatedOpps) {
             // Set the Next Step field to 'Batching the next meetings together.'
-
+            opp.NextStep = BATCH_NEXT_STEP;
+            updateOpps.add(opp);
+        }
         // Update the opportunity records
-
+        update updateOpps;
     }
     
     public void finish(Database.BatchableContext BC){
-        final List<User> USERS = [SELECT Id, Name, Email FROM User WHERE IsActive = true AND (NOT Email LIKE 'autoproc%')]; // DO NOT CHANGE
-
+        final List<User> USERS = [
+            SELECT Id, Name, Email 
+            FROM User 
+            WHERE IsActive = true AND (NOT Email LIKE 'autoproc%')
+            ]; // DO NOT CHANGE
         // Get the email addresses of all active users
-
-            // Pass the set of active user emails to the sendEmailToActiveUsers method
+        System.debug('Users in Batch: '+ USERS.size());
+        Set<String> userEmails = new Set<String>();
+        for (User usr : USERS) {
+            userEmails.add(usr.Email);
+        }
+        // Pass the set of active user emails to the sendEmailToActiveUsers method
+        sendEmailToActiveUsers(userEmails);
+        System.debug('Batch method finished!');
     }
 
     // Helper method to send an email to all emails in the set
