@@ -27,9 +27,34 @@ public with sharing class NextStepFuture {
      * Opportunity Next Step field is a standard field
      * Update the corresponding test class AsynchronousTest and test method nextStepFuture_testUpdateAllNextStep to cover test this method
      */
-    //[public | private ] [static] data_type method_name (input parameters) {
-    //  The body of the method
-    //}
+    @future
+    public static void futureMethod () {
+        //The body of the method
+        List<Account> updatedAccs = new List<Account>();
+        List<Opportunity> updatedOpps = new List<Opportunity>();
+
+        List<Account> updateAccsNextStep = [
+            SELECT Id, Next_Step__c
+            FROM Account
+        ];
+        List<Opportunity> updateOppsNextStep = [
+            SELECT Id, NextStep
+            FROM Opportunity
+        ];
+
+        for (Account singleAcc : updateAccsNextStep) {
+            singleAcc.Next_Step__c = 'Meeting in the future';
+            updatedAccs.add(singleAcc);
+        }
+
+        for (Opportunity singleOpp : updateOppsNextStep) {
+            singleOpp.NextStep = 'Meeting in the future';
+            updatedOpps.add(singleOpp);
+        }
+
+        update updatedAccs;
+        update updatedOpps;
+    }
 
     /*
     * Question 2
@@ -41,9 +66,7 @@ public with sharing class NextStepFuture {
     public static void createDealAndUpdateRole() {
         Opportunity bigDeal = new Opportunity();
         insertBigDeal(bigDeal);
-
-        UserRole[] roles = [SELECT Id, Name FROM UserRole WHERE Id = :UserInfo.getUserRoleId() OR Name = 'CRO' LIMIT 1];
-        updateUserRoleName(roles);
+        updateUserRoleName();
     }
 
     // Helper method to insert big deal
@@ -56,10 +79,11 @@ public with sharing class NextStepFuture {
         insert opp;
     }
 
-
     // Helper method to update role name
-    private static void updateUserRoleName(UserRole[] roles){
+    @future
+    private static void updateUserRoleName(){
         UserRole role;
+        UserRole[] roles = [SELECT Id, Name FROM UserRole WHERE Id = :UserInfo.getUserRoleId() OR Name = 'CRO' LIMIT 1];
         if (roles.isEmpty()) {
             role = new UserRole();
             role.portalType = 'None'; 
